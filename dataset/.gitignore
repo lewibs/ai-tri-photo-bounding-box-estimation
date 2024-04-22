@@ -1,0 +1,6 @@
+data/*
+data_segmented/*
+data_train/*
+metadata/*
+data.zip
+anotations.csv
