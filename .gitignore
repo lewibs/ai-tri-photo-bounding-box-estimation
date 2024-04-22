@@ -1,1 +1,3 @@
-dataset/*
+dataset/data/*
+dataset/metadata/*
+dataset/data.zip
