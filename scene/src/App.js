@@ -192,6 +192,8 @@ async function generateDataSet(camera, renderer, controls, scene) {
   const backgrounds = await Promise.all(awaitbackgrounds);
 
   for (let furniture = 0; furniture < data.furniture_count; furniture++) {
+    //19 failed
+    //23 failed
     const gltf = await getGltf(data, furniture);
     scene.add(gltf)
 
