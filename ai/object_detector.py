@@ -1,86 +1,51 @@
+import os
 import torch
-import torchvision
-from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
-from torchvision.datasets import CocoDetection
-from torchvision.transforms import transforms
-from torch.utils.data import DataLoader
-import torch.optim as optim
-import time
 
-# Define your dataset paths and other parameters
-train_data_dir = 'path/to/train/dataset'
-val_data_dir = 'path/to/validation/dataset'
-num_classes = 2  # Number of classes in your dataset (including background)
-batch_size = 4
-lr = 0.001
-num_epochs = 10
+from torchvision.io import read_image
+from torchvision.ops.boxes import masks_to_boxes
+from torchvision import tv_tensors
+from torchvision.transforms.v2 import functional as F
 
-# Define data transformations
-train_transform = transforms.Compose([
-    transforms.ToTensor()
-])
 
-val_transform = transforms.Compose([
-    transforms.ToTensor()
-])
+class Dataset(torch.utils.data.Dataset):
+    def __init__(self, root, boxes, labels, transforms):
+        self.root = root
+        self.transforms = transforms
+        # load all image files, sorting them to
+        # ensure that they are aligned
+        self.imgs = list(sorted(os.listdir(os.path.join(root))))
+        self.boxes = boxes
+        self.lables = labels
 
-# Load COCO train and validation datasets
-train_dataset = CocoDetection(root=train_data_dir, annFile=train_annotation_file, transform=train_transform)
-val_dataset = CocoDetection(root=val_data_dir, annFile=val_annotation_file, transform=val_transform)
+    def __getitem__(self, idx):
+        # load images and masks
+        img_path = os.path.join(self.root, self.imgs[idx])
+        img = read_image(img_path)
 
-# Define dataloaders
-train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+        num_objs = 1
 
-# Load pre-trained Faster R-CNN model
-model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
+        boxes = boxes[self.imgs[idx]]
+        labels = self.lables
 
-# Replace the classifier with a new one that has the correct number of classes
-num_classes = 2  # 1 (object) + 1 (background)
-in_features = model.roi_heads.box_predictor.cls_score.in_features
-model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
+        image_id = idx
+        area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
+        # suppose all instances are not crowd
+        iscrowd = torch.zeros((num_objs,), dtype=torch.int64)
 
-# Define loss function and optimizer
-params = [p for p in model.parameters() if p.requires_grad]
-optimizer = optim.SGD(params, lr=lr, momentum=0.9, weight_decay=0.0005)
-# or use Adam optimizer
-# optimizer = optim.Adam(params, lr=lr)
+        # Wrap sample and targets into torchvision tv_tensors:
+        img = tv_tensors.Image(img)
 
-# Training loop
-device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-model.to(device)
-for epoch in range(num_epochs):
-    model.train()
-    total_loss = 0
-    start_time = time.time()
-    
-    for images, targets in train_dataloader:
-        images = list(image.to(device) for image in images)
-        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-        
-        optimizer.zero_grad()
-        loss_dict = model(images, targets)
-        losses = sum(loss for loss in loss_dict.values())
-        losses.backward()
-        optimizer.step()
-        
-        total_loss += losses.item()
-    
-    # Print training statistics
-    print(f"Epoch {epoch+1}/{num_epochs}, Loss: {total_loss/len(train_dataloader)}, "
-          f"Time: {time.time()-start_time}s")
-    
-    # Validation loop
-    model.eval()
-    with torch.no_grad():
-        for images, targets in val_dataloader:
-            images = list(image.to(device) for image in images)
-            targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-            
-            val_loss_dict = model(images, targets)
-            val_losses = sum(val_loss for val_loss in val_loss_dict.values())
-    
-    print(f"Validation Loss: {val_losses/len(val_dataloader)}")
+        target = {}
+        target["boxes"] = tv_tensors.BoundingBoxes(boxes, format="XYXY", canvas_size=F.get_size(img))
+        target["labels"] = labels
+        target["image_id"] = image_id
+        target["area"] = area
+        target["iscrowd"] = iscrowd
 
-# Save the trained model
-torch.save(model.state_dict(), 'fine_tuned_faster_rcnn.pth')
+        if self.transforms is not None:
+            img, target = self.transforms(img, target)
+
+        return img, target
+
+    def __len__(self):
+        return len(self.imgs)
