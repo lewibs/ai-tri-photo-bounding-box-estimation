@@ -40,6 +40,6 @@ if __name__ == "__main__":
 
     try:
         copy_data_for_train(source_dir, destination_dir, anotations_file)
-        print("train/validate directories created.")
+        print("train directory created.")
     except Exception as e:
         print(f"An error occurred: {str(e)}")

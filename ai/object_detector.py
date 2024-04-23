@@ -10,6 +10,7 @@ import pandas as pd
 import json
 import utils
 from engine import train_one_epoch, evaluate
+import math
 
 # Made with adaptions from this toutorial:
 # https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html
@@ -46,7 +47,7 @@ class Dataset(torch.utils.data.Dataset):
         target["boxes"] = tv_tensors.BoundingBoxes(boxes, format="XYXY", canvas_size=F.get_size(img))
         target["labels"] = torch.tensor([1], dtype=torch.int64)
         target["image_id"] = image_id
-        target["area"] = area
+        target["area"] = torch.tensor([area])
         target["iscrowd"] = iscrowd
 
         if self.transforms is not None:
@@ -150,8 +151,14 @@ if __name__ == "__main__":
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
     indices = torch.randperm(len(dataset)).tolist()
-    dataset = torch.utils.data.Subset(dataset, indices[:-50])
-    dataset_test = torch.utils.data.Subset(dataset_test, indices[-50:])
+    images = len(indices)
+
+    dataset_count = math.floor(images/2)
+    dataset_test_count = math.floor(images/2)
+    
+    #TODO update to full length
+    dataset = torch.utils.data.Subset(dataset, indices[:-dataset_count])
+    dataset_test = torch.utils.data.Subset(dataset_test, indices[-dataset_test_count:])
 
     # define training and validation data loaders
     data_loader = torch.utils.data.DataLoader(
@@ -195,12 +202,18 @@ if __name__ == "__main__":
     checkpoint_path = 'model_checkpoint.pth'
 
     for epoch in range(num_epochs):
+        print("Start epoch")
         # train for one epoch, printing every 10 iterations
         train_loss = train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
         # update the learning rate
         lr_scheduler.step()
         # evaluate on the test dataset
         test_loss = evaluate(model, data_loader_test, device=device)
+
+        print("loss here:")
+        print(train_loss)
+        print(test_loss)
+        print("loss done")
 
         # Save model checkpoint after each epoch
         torch.save({
@@ -210,3 +223,4 @@ if __name__ == "__main__":
             'train_loss': train_loss,
             'test_loss': test_loss
         }, checkpoint_path)
+        print("Finished epoch")
