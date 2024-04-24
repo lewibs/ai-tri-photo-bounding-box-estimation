@@ -11,6 +11,7 @@ import json
 import utils
 from engine import train_one_epoch, evaluate
 import math
+import FurnitureDetector
 
 # Made with adaptions from this toutorial:
 # https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html
@@ -57,20 +58,6 @@ class Dataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return len(self.imgs)
-    
-def get_model():
-    # load a model pre-trained on COCO
-    model = torchvision.models.detection.fasterrcnn_resnet50_fpn(weights="DEFAULT")
-
-    num_classes = 2  # 1 class (object) + background
-
-    # get number of input features for the classifier
-    in_features = model.roi_heads.box_predictor.cls_score.in_features
-
-    # replace the pre-trained head with a new one
-    model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
-
-    return model
 
 def downloadStuff():
     # URLs of the files to download
@@ -177,7 +164,7 @@ if __name__ == "__main__":
         collate_fn=utils.collate_fn
     )
 
-    model = get_model()
+    model = FurnitureDetector.get_model()
 
     # construct an optimizer
     params = [p for p in model.parameters() if p.requires_grad]
@@ -199,7 +186,7 @@ if __name__ == "__main__":
     num_epochs = 2
 
     # Define paths for saving the model checkpoints
-    checkpoint_path = 'model_checkpoint.pth'
+    checkpoint_path = 'FurnitureDetector_weights.pth'
 
     for epoch in range(num_epochs):
         print("Start epoch")
@@ -216,11 +203,5 @@ if __name__ == "__main__":
         print("loss done")
 
         # Save model checkpoint after each epoch
-        torch.save({
-            'epoch': epoch,
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'train_loss': train_loss,
-            'test_loss': test_loss
-        }, checkpoint_path)
+        torch.save(model.state_dict(), checkpoint_path)
         print("Finished epoch")
