@@ -85,15 +85,6 @@ def downloadStuff():
     for filename in os.listdir(destination_dir):
         print(filename)
 
-def get_transform(train):
-    transforms = []
-    if train:
-        transforms.append(T.RandomHorizontalFlip(0.5))
-    transforms.append(T.ToDtype(torch.float, scale=True))
-    transforms.append(T.ToPureTensor())
-    return T.Compose(transforms)
-
-
 if __name__ == "__main__":
     downloadStuff()
     csv_file = '../dataset/anotations.csv'
@@ -127,21 +118,21 @@ if __name__ == "__main__":
         root="../dataset/data_train",
         boxes=boxes,
         labels=labels,
-        transforms=get_transform(train=True)    
+        transforms=FurnitureDetector.get_transform(train=True)    
     )
     dataset_test = Dataset(
         root="../dataset/data_train",
         boxes=boxes,
         labels=labels,
-        transforms=get_transform(train=False)    
+        transforms=FurnitureDetector.get_transform(train=False)    
     )
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
     indices = torch.randperm(len(dataset)).tolist()
     images = len(indices)
 
-    dataset_count = math.floor(images/2)
-    dataset_test_count = math.floor(images/2)
+    dataset_count = math.floor(images*0.20)
+    dataset_test_count = math.floor(images*0.80)
     
     #TODO update to full length
     dataset = torch.utils.data.Subset(dataset, indices[:-dataset_count])
@@ -164,7 +155,7 @@ if __name__ == "__main__":
         collate_fn=utils.collate_fn
     )
 
-    model = FurnitureDetector.get_model()
+    model = FurnitureDetector.get_model(train=True)
 
     # construct an optimizer
     params = [p for p in model.parameters() if p.requires_grad]
@@ -191,17 +182,11 @@ if __name__ == "__main__":
     for epoch in range(num_epochs):
         print("Start epoch")
         # train for one epoch, printing every 10 iterations
-        train_loss = train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=10)
+        train_loss = train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq=1)
         # update the learning rate
         lr_scheduler.step()
         # evaluate on the test dataset
         test_loss = evaluate(model, data_loader_test, device=device)
-
-        print("loss here:")
-        print(train_loss)
-        print(test_loss)
-        print("loss done")
-
         # Save model checkpoint after each epoch
         torch.save(model.state_dict(), checkpoint_path)
         print("Finished epoch")
