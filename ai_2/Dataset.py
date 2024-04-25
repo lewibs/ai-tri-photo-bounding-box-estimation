@@ -26,12 +26,12 @@ class Dataset(torch.utils.data.Dataset):
 
         image_id = idx
         box = boxes
-        # height, width = img.shape[1:]
-        # box = torch.tensor(boxes) / 100
-        # box[3] *= width
-        # box[1] *= width
-        # box[0] *= height
-        # box[2] *= height
+        height, width = img.shape[1:]
+        box = torch.tensor(boxes) / 100
+        box[3] *= width
+        box[1] *= width
+        box[0] *= height
+        box[2] *= height
 
         area = (box[3] - box[1]) * (box[2] - box[0])
 

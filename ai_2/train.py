@@ -17,7 +17,7 @@ if __name__ == "__main__":
     STEP = 3
     GAMMA = 0.1
     CHECKPOINT = 'FurnitureDetector_weights.pth'
-    TRAINING_SPLIT = 0.50
+    TRAINING_SPLIT = 0.80
 
     DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
