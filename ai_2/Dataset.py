@@ -10,7 +10,7 @@ class Dataset(torch.utils.data.Dataset):
         self.root = root
         self.transforms = transforms
         self.imgs = list(sorted(os.listdir(os.path.join(root))))
-        self.anotation = load_anotations(anotations) 
+        self.anotations = load_anotations(anotations) 
 
     def __getitem__(self, idx):
         # load images and masks
@@ -19,11 +19,22 @@ class Dataset(torch.utils.data.Dataset):
 
         num_objs = 1
 
-        boxes = self.boxes[self.imgs[idx]]
-        labels = self.lables[self.imgs[idx]]
+        anotation = self.anotations[self.imgs[idx]][0]
+
+        boxes = anotation.box
+        labels = anotation.label
 
         image_id = idx
-        area = (boxes[3] - boxes[1]) * (boxes[2] - boxes[0])
+        box = boxes
+        # height, width = img.shape[1:]
+        # box = torch.tensor(boxes) / 100
+        # box[3] *= width
+        # box[1] *= width
+        # box[0] *= height
+        # box[2] *= height
+
+        area = (box[3] - box[1]) * (box[2] - box[0])
+
         # suppose all instances are not crowd
         iscrowd = torch.zeros((num_objs,), dtype=torch.int64)
 
@@ -31,7 +42,7 @@ class Dataset(torch.utils.data.Dataset):
         img = tv_tensors.Image(img)
 
         target = {}
-        target["boxes"] = tv_tensors.BoundingBoxes(boxes, format="XYXY", canvas_size=F.get_size(img))
+        target["boxes"] = tv_tensors.BoundingBoxes(box, format="XYXY", canvas_size=F.get_size(img))
         target["labels"] = torch.tensor([1], dtype=torch.int64)
         target["image_id"] = image_id
         target["area"] = torch.tensor([area])

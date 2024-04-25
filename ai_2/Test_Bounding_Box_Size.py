@@ -34,8 +34,6 @@ image_tensor = transform(image)
 width, height = image.size
 
 # Print the width and height
-print("Width:", width)
-print("Height:", height)
 
 # # Step 4: Perform inference
 # with torch.no_grad():
