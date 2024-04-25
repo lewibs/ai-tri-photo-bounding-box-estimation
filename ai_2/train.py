@@ -33,13 +33,13 @@ if __name__ == "__main__":
     dataset = Dataset(
         root="../dataset/data_train",
         anotations="../dataset/anotations.csv",
-        transforms=get_transform(train=False),
+        transforms=get_transform(train=True),
     )
 
     dataset_test = Dataset(
         root="../dataset/data_train",
         anotations="../dataset/anotations.csv",
-        transforms=get_transform(train=True),
+        transforms=get_transform(train=False),
     )
 
     indices = torch.randperm(len(dataset)).tolist()
