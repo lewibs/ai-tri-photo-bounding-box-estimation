@@ -30,14 +30,24 @@ image = Image.open(os.path.join(data_root, basename)).convert("RGB")
 transform = transforms.Compose([transforms.ToTensor()])
 image_tensor = transform(image)
 
+# Get the width and height of the image
+width, height = image.size
+
+# Print the width and height
+print("Width:", width)
+print("Height:", height)
+
 # # Step 4: Perform inference
 # with torch.no_grad():
 #     predictions = model([image_tensor])
 
 # # Step 5: Display the image with bounding boxes and labels
 draw = ImageDraw.Draw(image)
-for anotation in anotation: 
-    draw.rectangle([(anotation.box[0], anotation.box[1]), (anotation.box[2], anotation.box[3])], outline="red")
-    draw.text((anotation.box[0], anotation.box[1]), f"{anotation.label})", fill="red")
+for anotation in anotation:
+    x_min, y_min, x_max, y_max = anotation.box
+    dims = [(width * (x_min / 100), height * (y_min / 100)), (width * (x_max / 100), height * (y_max / 100))]
+    draw.rectangle(dims, outline="red")
+    draw.text((width * (x_min / 100), height * (y_min / 100)), f"{anotation.label}", fill="red")
+
 
 image.show()
