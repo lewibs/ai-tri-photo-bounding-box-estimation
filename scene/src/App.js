@@ -167,6 +167,14 @@ async function getGltf(data, index) {
   })
 }
 
+async function getScene() {
+  // Load GLB file
+  const loader = new GLTFLoader();
+  return await new Promise((resolve, reject)=>{
+    loader.load(`assets/scenes/0.glb`, (gltf)=>{resolve(gltf.scene)})
+  })
+}
+
 async function getBackground(data, index) {
   const textureLoader = new THREE.TextureLoader();
   const geometry = new THREE.SphereGeometry( 500, 60, 40 );
@@ -179,67 +187,57 @@ async function getBackground(data, index) {
 }
 
 async function generateDataSet(camera, renderer, controls, scene) {
+  function dispose(object) {
+    object.material?.dispose();
+    object.geometry?.dispose();
+    object.children.forEach(dispose)
+  }
+
   const response = await fetch("assets/meta.json")
   const data = await response.json();
   const dataset = []
+  const raycaster = new THREE.Raycaster(new THREE.Vector3(0,0,0), new THREE.Vector3(0,-1,0));
+  const intersects = raycaster.intersectObject(scene)
 
-  const awaitbackgrounds = [];
-  for (let photo = 0; photo < data.photo_count; photo++) {
-    const background = getBackground(data, photo);
-    awaitbackgrounds.push(background);
-  } 
-
-  const backgrounds = await Promise.all(awaitbackgrounds);
-
-  for (let furniture = 0; furniture < data.furniture_count; furniture++) {
-    //19 failed
-    //23 failed
-    const gltf = await getGltf(data, furniture);
+  //data.furniture_count
+  // for(let i = 0; i < 10; i++) {
+    const gltf = await getGltf(data, 50);
+    let bbox = new THREE.Box3().setFromObject(gltf);
+    let size = new THREE.Vector3();
+    bbox.getSize(size);
+    gltf.position.y -= intersects.distance - (size.y / 2);
+    gltf.scale.set(40,40,40)
     scene.add(gltf)
 
-    for (let photo = 0; photo < data.photo_count; photo++) {
-        const background = backgrounds[photo];
-        scene.add(background)
+    console.log(gltf)
 
-        // for (let fov = 75; fov <= 180; fov += (180 - 75) / 3) {
-        //   // const dims = [Math.random(), Math.random(), Math.random()].map(v=>v*hypotinuse);
-        //   // gltf.position.set(dims[0], dims[1], dims[2]);
-        //   camera.fov = fov
-        //   camera.updateProjectionMatrix();
-          const dat = await getSceneData(camera, renderer, controls, gltf);
-          dataset.push(dat);
-        // }
-      
-        
-        scene.remove(background)
-    }
+    // const dat = await getSceneData(camera, renderer, controls, gltf);
+    // dataset.push(dat);
+    console.log("new item loaded")
 
-    function dispose(object) {
-      object.material?.dispose();
-      object.geometry?.dispose();
-      object.children.forEach(dispose)
-    }
+    // scene.remove(gltf)
+    // dispose(gltf)
+  // }
 
-    scene.remove(gltf)
-    dispose(gltf)
-  }
-
-  backgrounds.forEach((background)=>{
-    background.geometry.dispose();
-    background.material.dispose();
-  })
-
+  console.log("done");
 }
 
 function App() {
   useEffect(() => {
     const scene = new THREE.Scene();
 
-    const light = new THREE.AmbientLight( 0xffffff, 3 );
+    const light = new THREE.AmbientLight( 0xffffff, 1 );
     scene.add( light );
 
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 5);
+    directionalLight.position.set(50, 50, 0); // Set the direction of the light
+    scene.add(directionalLight);
+
+    scene.background = new THREE.Color('skyblue');
+
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.z = 1;
+    camera.position.x = 115;
+    camera.position.z = 20;
     
     const renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -248,10 +246,16 @@ function App() {
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.update();
 
+    getScene().then((room)=>{
+      room.position.y -= 50
+      room.position.x += 130
+
+      scene.add(room)
+      generateDataSet(camera, renderer, controls, scene)
+    })
+
     // createBackground().then(res=>scene.add(res))
     // window.getData = ()=>getTriPhoto(camera, renderer, controls)
-
-    generateDataSet(camera, renderer, controls, scene)
 
     // Render the scene
     function animate() {
