@@ -9,7 +9,7 @@ from utils import collate_fn
 
 if __name__ == "__main__":
     BATCH_SIZE = 2
-    NUM_EPOCHS = 2
+    NUM_EPOCHS = 10
     NUM_WORKERS = 4
     LEARNING_RATE = 0.005
     MOMENTUM = 0.9
