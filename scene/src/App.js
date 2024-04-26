@@ -197,7 +197,7 @@ async function generateDataSet(camera, renderer, controls, scene) {
   const data = await response.json();
   const dataset = []
   const raycaster = new THREE.Raycaster(new THREE.Vector3(0,0,0), new THREE.Vector3(0,-1,0));
-  const intersects = raycaster.intersectObject(scene)
+  const intersects = raycaster.intersectObject(scene)[0]
 
   //data.furniture_count
   // for(let i = 0; i < 10; i++) {
