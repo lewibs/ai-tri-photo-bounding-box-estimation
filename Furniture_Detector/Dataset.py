@@ -38,9 +38,6 @@ class Dataset(torch.utils.data.Dataset):
         labels = anotation.label
 
         labels = [label_to_index(label) for label in labels]
-        
-        print(anotation)
-        print(boxes)
 
         box = boxes
         height, width = img.shape[1:]
@@ -59,7 +56,7 @@ class Dataset(torch.utils.data.Dataset):
         img = tv_tensors.Image(img)
 
         target = {}
-        target["boxes"] = tv_tensors.BoundingBoxes(box, format="XYWH", canvas_size=F.get_size(img))
+        target["boxes"] = tv_tensors.BoundingBoxes(box, format="XYXY", canvas_size=F.get_size(img))
         target["labels"] = torch.tensor(labels, dtype=torch.int64)
         target["image_id"] = image_id
         target["area"] = torch.tensor([area])

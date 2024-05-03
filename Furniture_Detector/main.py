@@ -4,11 +4,9 @@ from FurnitureDetector import get_furniture_detector
 from torchvision.datasets import CocoDetection
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from PIL import Image, ImageDraw
+from Labels import labels
 
-# COCO class labels
-coco_labels = [
-    '__background__', 'object'
-]
+coco_labels = labels
 
 # Step 1: Load pre-trained Faster R-CNN model
 
