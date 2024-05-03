@@ -13,11 +13,11 @@ coco_labels = [
 # Step 1: Load pre-trained Faster R-CNN model
 
 model = get_furniture_detector()
-model.load_state_dict(torch.load("./FurnitureDetector_weights_maskless.pth"))
+# model.load_state_dict(torch.load("./FurnitureDetector_weights.pth"))
 model.eval()
 
 # Step 2: Load the image
-image_path = "../dataset/PennFudanPed/PNGImages/FudanPed00001.png"
+image_path = "../dataset/data_train/fe230a60-1161-4d69-902e-92b8cd929687.jpg"
 image = Image.open(image_path).convert("RGB")
 
 # Step 3: Preprocess the image
@@ -27,8 +27,6 @@ image_tensor = transform(image)
 # Step 4: Perform inference
 with torch.no_grad():
     predictions = model([image_tensor])
-
-print(predictions)
 
 # Step 5: Display the image with bounding boxes and labels
 draw = ImageDraw.Draw(image)

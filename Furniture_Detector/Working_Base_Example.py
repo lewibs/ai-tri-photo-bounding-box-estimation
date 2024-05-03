@@ -25,7 +25,7 @@ model = fasterrcnn_resnet50_fpn(pretrained=True)
 model.eval()
 
 # Step 2: Load the image
-image_path = "../dataset/free-images.jpg"
+image_path = "../dataset/data/3c4acd97-36ef-426a-955d-1699c2a7ecf1.jpg"
 image = Image.open(image_path).convert("RGB")
 
 # Step 3: Preprocess the image

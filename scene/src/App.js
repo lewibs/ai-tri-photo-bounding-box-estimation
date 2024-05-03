@@ -60,8 +60,6 @@ async function getSceneData(camera, renderer, controls, object) {
     const maxY = boundingBox.max.y;
     const maxZ = boundingBox.max.z;
 
-    const hypotinuse = Math.sqrt(Math.pow(maxX, 2)+Math.pow(maxY, 2)+Math.pow(maxZ, 2));
-
     const photos = []
 
     const fov = camera.fov;
@@ -83,32 +81,33 @@ async function getSceneData(camera, renderer, controls, object) {
 
 
     for (let i = 0; i < 3; i++) {
-      let rotation = [0, 0, 0]; // Initialize rotation
-      let camera_pos = [0, 0, 0];
+      let camera_pos = [ 120, 76, 120];
       
       // Set rotation based on the axis
       switch (i) {
         case 0: // x-axis
-          rotation[0] = Math.PI / 2; // Rotate around x-axis by 90 degrees
-          camera_pos[0] = hypotinuse * 2
+          camera_pos[0] = camera_pos[0] - Math.floor(Math.random() * 20)
+          camera_pos[1] = 0
+          camera_pos[2] = 0
           break;
         case 1: // y-axis
-          rotation[1] = - Math.PI / 2; // Rotate around y-axis by 90 degrees
-          camera_pos[1] = hypotinuse * 2
+          camera_pos[0] = 0
+          camera_pos[1] = camera_pos[1] - Math.floor(Math.random() * 20)
+          camera_pos[2] = 0
           break;
         case 2: // z-axis
-          rotation[2] =  Math.PI / 2; // Rotate around z-axis by 90 degrees
-          camera_pos[2] = hypotinuse * 2
+        camera_pos[0] = 0
+        camera_pos[1] = 0
+        camera_pos[2] = camera_pos[2] - Math.floor(Math.random() * 20)
           break;
       }
 
       camera.position.set(camera_pos[0], camera_pos[1], camera_pos[2])
-      controls.target.fromArray(rotation);
       controls.update();
       
       // Extract camera properties
       const position = camera.position.toArray();
-      rotation = camera.rotation.toArray();
+      const rotation = camera.rotation.toArray();
       const up = camera.up.toArray();
       const image = await screenshot(renderer)
   
@@ -196,30 +195,42 @@ async function generateDataSet(camera, renderer, controls, scene) {
   const response = await fetch("assets/meta.json")
   const data = await response.json();
   const dataset = []
-  const raycaster = new THREE.Raycaster(new THREE.Vector3(0,0,0), new THREE.Vector3(0,-1,0));
-  const intersects = raycaster.intersectObject(scene)[0]
 
   //data.furniture_count
-  // for(let i = 0; i < 10; i++) {
-    const gltf = await getGltf(data, 50);
+  for(let i = 0; i < data.furniture_count; i++) {
+    let gltf = await getGltf(data, i);
     let bbox = new THREE.Box3().setFromObject(gltf);
+    let volume = new THREE.Vector3();
+    bbox.getSize(volume);
+    volume = volume.x * volume.y * volume.z
+
+    if (volume < 1) {
+      gltf.scale.set(40,40,40)
+    } else if (volume > 250000 ) {
+      gltf.scale.set(0.3,0.3,0.3)
+    } else {
+      gltf.scale.set(13,13,13)
+    }
+
+    bbox.setFromObject(gltf);
+    const center = bbox.getCenter(new THREE.Vector3())
+    gltf.position.y -= center.y;
+    gltf.position.x -= center.x;
+    gltf.position.z -= center.z;
+    bbox.setFromObject(gltf)
+    gltf.position.y -= 49.8;
+    gltf.position.y -= bbox.min.y;
+
     let size = new THREE.Vector3();
     bbox.getSize(size);
-    gltf.position.y -= intersects.distance - (size.y / 2);
-    gltf.scale.set(40,40,40)
     scene.add(gltf)
 
-    console.log(gltf)
+    const dat = await getSceneData(camera, renderer, controls, gltf);
+    dataset.push(dat);
 
-    // const dat = await getSceneData(camera, renderer, controls, gltf);
-    // dataset.push(dat);
-    console.log("new item loaded")
-
-    // scene.remove(gltf)
-    // dispose(gltf)
-  // }
-
-  console.log("done");
+    scene.remove(gltf)
+    dispose(gltf)
+  }
 }
 
 function App() {
@@ -251,12 +262,12 @@ function App() {
       room.position.x += 130
 
       scene.add(room)
-      generateDataSet(camera, renderer, controls, scene)
+
+      
+      
+      window.start = ()=>generateDataSet(camera, renderer, controls, scene)
     })
-
-    // createBackground().then(res=>scene.add(res))
-    // window.getData = ()=>getTriPhoto(camera, renderer, controls)
-
+    
     // Render the scene
     function animate() {
       requestAnimationFrame(animate);

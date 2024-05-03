@@ -28,6 +28,8 @@ class PennFudanDataset(torch.utils.data.Dataset):
         obj_ids = obj_ids[1:]
         num_objs = len(obj_ids)
 
+        print(num_objs)
+
         # split the color-encoded mask into a set
         # of binary masks
         masks = (mask == obj_ids[:, None, None]).to(dtype=torch.uint8)

@@ -7,6 +7,7 @@ import math
 from engine import train_one_epoch, evaluate
 from utils import collate_fn
 from PennFundanDataset import PennFudanDataset
+from PennFundanDataset_LabelStudio import PennFudanDataset_LabelStudio
 
 if __name__ == "__main__":
     BATCH_SIZE = 2
@@ -17,7 +18,7 @@ if __name__ == "__main__":
     WEIGHT_DECAY = 0.0005
     STEP = 3
     GAMMA = 0.1
-    CHECKPOINT = 'FurnitureDetector_weights_maskless.pth'
+    CHECKPOINT = 'FurnitureDetector_weights.pth'
 
     DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
@@ -30,20 +31,32 @@ if __name__ == "__main__":
     # location to save model and plots
     OUT_DIR = 'outputs'
 
-    # dataset = Dataset(
-    #     root="../dataset/data_train",
-    #     anotations="../dataset/anotations.csv",
+    dataset = Dataset(
+        root="../dataset/data_train",
+        anotations="../dataset/anotations.csv",
+        transforms=get_transform(train=True),
+    )
+
+    dataset_test = Dataset(
+        root="../dataset/data_train",
+        anotations="../dataset/anotations.csv",
+        transforms=get_transform(train=False),
+    )
+
+    # dataset = PennFudanDataset_LabelStudio(
+    #     root="../dataset/PennFudanPed/PNGImages",
+    #     anotations="../dataset/PennFudanPed/anotations.csv",
     #     transforms=get_transform(train=True),
     # )
 
-    # dataset_test = Dataset(
-    #     root="../dataset/data_train",
-    #     anotations="../dataset/anotations.csv",
+    # dataset_test = PennFudanDataset_LabelStudio(
+    #     root="../dataset/PennFudanPed/PNGImages",
+    #     anotations="../dataset/PennFudanPed/anotations.csv",
     #     transforms=get_transform(train=False),
     # )
 
-    dataset = PennFudanDataset('../dataset/PennFudanPed', get_transform(train=True))
-    dataset_test = PennFudanDataset('../dataset/PennFudanPed', get_transform(train=False))
+    # dataset = PennFudanDataset('../dataset/PennFudanPed', get_transform(train=True))
+    # dataset_test = PennFudanDataset('../dataset/PennFudanPed', get_transform(train=False))
 
     indices = torch.randperm(len(dataset)).tolist()
 
