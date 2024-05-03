@@ -11,7 +11,7 @@ coco_labels = labels
 # Step 1: Load pre-trained Faster R-CNN model
 
 model = get_furniture_detector()
-# model.load_state_dict(torch.load("./FurnitureDetector_weights.pth"))
+model.load_state_dict(torch.load("./FurnitureDetector_weights.pth"))
 model.eval()
 
 # Step 2: Load the image
