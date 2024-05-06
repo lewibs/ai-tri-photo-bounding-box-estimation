@@ -23,6 +23,7 @@ class Dataset(torch.utils.data.Dataset):
 
         self.imgs = [img for i, img in enumerate(self.imgs) if i not in bad_index]
 
+        print(self.imgs)
 
     def __getitem__(self, idx):
         # load images and masks

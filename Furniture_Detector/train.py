@@ -8,6 +8,9 @@ from engine import train_one_epoch, evaluate
 from utils import collate_fn
 from PennFundanDataset import PennFudanDataset
 from PennFundanDataset_LabelStudio import PennFudanDataset_LabelStudio
+from torchvision import transforms
+from roboflow import Roboflow
+from CustomCocoDataset import CustomCocoDataset
 
 if __name__ == "__main__":
     BATCH_SIZE = 2
@@ -26,22 +29,29 @@ if __name__ == "__main__":
         '__background__', 'object'
     ]
 
-    NUM_CLASSES = len(CLASSES)
+    roboflow = Roboflow(api_key='')
+    name = "furniture-objects"
+    number = 1
+    full_name = name + "-" + str(number)
 
-    # location to save model and plots
-    OUT_DIR = 'outputs'
+    project = roboflow.workspace("lewibser-ssm5b").project(name)
+    version = project.version(number)
+    dataset = version.download("coco")
 
-    dataset = Dataset(
-        root="../dataset/data_train",
-        anotations="../dataset/anotations.csv",
-        transforms=get_transform(train=True),
-    )
+    dataset = CustomCocoDataset(root="./furniture-objects-1/train", annFile="./furniture-objects-1/train/_annotations.coco.json", transform=get_transform(train=True))
+    dataset_test = CustomCocoDataset(root="./furniture-objects-1/test", annFile="./furniture-objects-1/test/_annotations.coco.json", transform=get_transform(train=False))
 
-    dataset_test = Dataset(
-        root="../dataset/data_train",
-        anotations="../dataset/anotations.csv",
-        transforms=get_transform(train=False),
-    )
+    # dataset = Dataset(
+    #     root="../dataset/data_train",
+    #     anotations="../dataset/anotations.csv",
+    #     transforms=get_transform(train=True),
+    # )
+
+    # dataset_test = Dataset(
+    #     root="../dataset/data_train",
+    #     anotations="../dataset/anotations.csv",
+    #     transforms=get_transform(train=False),
+    # )
 
     # dataset = PennFudanDataset_LabelStudio(
     #     root="../dataset/PennFudanPed/PNGImages",
@@ -57,11 +67,6 @@ if __name__ == "__main__":
 
     # dataset = PennFudanDataset('../dataset/PennFudanPed', get_transform(train=True))
     # dataset_test = PennFudanDataset('../dataset/PennFudanPed', get_transform(train=False))
-
-    indices = torch.randperm(len(dataset)).tolist()
-
-    dataset = torch.utils.data.Subset(dataset, indices[:-50])
-    dataset_test = torch.utils.data.Subset(dataset_test, indices[-50:])
 
     # define training and validation data loaders
     data_loader = torch.utils.data.DataLoader(
@@ -97,14 +102,21 @@ if __name__ == "__main__":
         gamma=GAMMA
     )
 
-    for epoch in range(NUM_EPOCHS):
-        print("Start epoch")
-        #TRAIN
-        train_loss = train_one_epoch(model, optimizer, data_loader, DEVICE, epoch, print_freq=10)
-        #UPDATE LEARNING RATE
-        lr_scheduler.step()
-        #EVALUATE
-        test_loss = evaluate(model, data_loader_test, device=DEVICE)
-        #SAVE STATUS
-        torch.save(model.state_dict(), CHECKPOINT)
-        print("Finished epoch")
+    images, targets = next(iter(data_loader))
+    images = list(image for image in images)
+    targets = [{k:v for k, v in t.items()} for t in targets]
+    print(images, targets)
+    output = model(images, targets)
+    print(output)
+
+    # for epoch in range(NUM_EPOCHS):
+    #     print("Start epoch")
+    #     #TRAIN
+    #     train_loss = train_one_epoch(model, optimizer, data_loader, DEVICE, epoch, print_freq=10)
+    #     #UPDATE LEARNING RATE
+    #     lr_scheduler.step()
+    #     #EVALUATE
+    #     test_loss = evaluate(model, data_loader_test, device=DEVICE)
+    #     #SAVE STATUS
+    #     torch.save(model.state_dict(), CHECKPOINT)
+    #     print("Finished epoch")
