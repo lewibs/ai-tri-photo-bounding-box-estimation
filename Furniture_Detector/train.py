@@ -29,7 +29,7 @@ if __name__ == "__main__":
         '__background__', 'object'
     ]
 
-    roboflow = Roboflow(api_key='')
+    roboflow = Roboflow(api_key='pg3aiPpEDu1jgJpFSiGR')
     name = "furniture-objects"
     number = 1
     full_name = name + "-" + str(number)
@@ -102,21 +102,22 @@ if __name__ == "__main__":
         gamma=GAMMA
     )
 
-    images, targets = next(iter(data_loader))
-    images = list(image for image in images)
-    targets = [{k:v for k, v in t.items()} for t in targets]
-    print(images, targets)
-    output = model(images, targets)
-    print(output)
+    # test and visualization here
+    # images, targets = next(iter(data_loader))
+    # images = list(image for image in images)
+    # targets = [{k:v for k, v in t.items()} for t in targets]
+    # print(images, targets)
+    # output = model(images, targets)
+    # print(output)
 
-    # for epoch in range(NUM_EPOCHS):
-    #     print("Start epoch")
-    #     #TRAIN
-    #     train_loss = train_one_epoch(model, optimizer, data_loader, DEVICE, epoch, print_freq=10)
-    #     #UPDATE LEARNING RATE
-    #     lr_scheduler.step()
-    #     #EVALUATE
-    #     test_loss = evaluate(model, data_loader_test, device=DEVICE)
-    #     #SAVE STATUS
-    #     torch.save(model.state_dict(), CHECKPOINT)
-    #     print("Finished epoch")
+    for epoch in range(NUM_EPOCHS):
+        print("Start epoch")
+        #TRAIN
+        train_loss = train_one_epoch(model, optimizer, data_loader, DEVICE, epoch, print_freq=10)
+        #UPDATE LEARNING RATE
+        lr_scheduler.step()
+        #EVALUATE
+        test_loss = evaluate(model, data_loader_test, device=DEVICE)
+        #SAVE STATUS
+        torch.save(model.state_dict(), CHECKPOINT)
+        print("Finished epoch")
