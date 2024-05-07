@@ -1,4 +1,4 @@
-labels = ["__background__", "chair", "couch", "table", "bookshelf", "desk", "bed", "dresser", "ottoman", "tv stand", "other"]
+labels = ["__background__", "object"]
 label_indexs = [i for i in range(len(labels))]
 
 def label_to_index(label):

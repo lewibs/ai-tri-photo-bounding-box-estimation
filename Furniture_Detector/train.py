@@ -1,13 +1,10 @@
 import torch
-from Dataset import Dataset
 from Transformer import get_transform
 import math
 from FurnitureDetector import get_furniture_detector
 import math
 from engine import train_one_epoch, evaluate
 from utils import collate_fn
-from PennFundanDataset import PennFudanDataset
-from PennFundanDataset_LabelStudio import PennFudanDataset_LabelStudio
 from torchvision import transforms
 from roboflow import Roboflow
 from CustomCocoDataset import CustomCocoDataset
