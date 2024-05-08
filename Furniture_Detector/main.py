@@ -1,6 +1,6 @@
 import torch
 import torchvision.transforms as transforms
-# from FurnitureDetector import get_furniture_detector
+from FurnitureDetector import get_furniture_detector
 from torchvision.datasets import CocoDetection
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from PIL import Image, ImageDraw
@@ -9,20 +9,7 @@ from torchvision.models.detection import fasterrcnn_resnet50_fpn
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from Labels import labels
 
-coco_labels = ["__background__", "chair", "couch", "table", "bookshelf", "desk", "bed", "dresser", "ottoman", "tv stand", "other"]
-
-def get_furniture_detector():
-    model = fasterrcnn_resnet50_fpn(pretrained=True)
-    
-    num_classes = len(coco_labels) 
-
-    # get number of input features for the classifier
-    in_features = model.roi_heads.box_predictor.cls_score.in_features
-
-    # replace the pre-trained head with a new one
-    model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
-
-    return model
+coco_labels = labels
 
 
 # Step 1: Load pre-trained Faster R-CNN model

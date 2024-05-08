@@ -2,6 +2,10 @@ import os
 import json
 from collections import namedtuple
 from torchvision.io import read_image
+import torch
+from torchvision.datasets import CocoDetection
+from torchvision import tv_tensors
+from torchvision.transforms.v2 import functional as F
 from load_image_from_file import load_image_from_file
 
 Metadata = namedtuple("Metadata", ["target", "camera", "photos"])
@@ -10,7 +14,7 @@ Vector = namedtuple("Vector", ["vector", "format"])
 Camera = namedtuple("Camera", ["fov", "aspect", "near", "far"])
 Image = namedtuple("Image", ["position", "rotation", "image"])
 
-def get_metadata(metaroot, dataroot): 
+def get_metadata(metaroot): 
     files = os.listdir(metaroot)
 
     output = {}
@@ -36,7 +40,7 @@ def get_metadata(metaroot, dataroot):
                 Image(
                     Vector(photo["position"], "XYZ"), 
                     Vector(photo["rotation"][:-1], "XYZ"),
-                    load_image_from_file(os.path.join(dataroot, photo["image"]))
+                    photo["image"]
                 )
             )
 
@@ -46,3 +50,38 @@ def get_metadata(metaroot, dataroot):
 
 def get_image(file):
     return read_image(file)
+
+class Dataset(torch.utils.data.Dataset):
+    def __init__(self, meta_root, data_root, transform=None):
+        self.metadata = get_metadata(meta_root)
+        self.filenames = list(self.metadata)
+        self.transform = transform
+        self.data_root = data_root
+
+    def __len__(self):
+        return len(self.metadata)
+
+    def __getitem__(self, idx):
+        filename = self.filenames[idx]
+        metadata = self.metadata[filename]
+
+        photos = []
+        rotations = []
+        positions = []
+
+        fov = metadata.camera.fov
+        aspect = metadata.camera.aspect
+        near = metadata.camera.near
+        far = metadata.camera.far
+
+        target = metadata.target.box
+
+        for photo in metadata.photos:
+            photos.append(photo.image)
+            rotations.append(photo.rotation.vector)
+            positions.append(photo.position.vector)
+    
+        if self.transform:
+            photos = [self.transform(load_image_from_file(os.path.join(self.data_root, photo))) for photo in photos]
+
+        return fov, near, far, aspect, photos, positions, rotations, target

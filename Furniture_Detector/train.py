@@ -8,6 +8,7 @@ from utils import collate_fn
 from torchvision import transforms
 from roboflow import Roboflow
 from CustomCocoDataset import CustomCocoDataset
+from Labels import labels
 
 if __name__ == "__main__":
     BATCH_SIZE = 2
@@ -22,10 +23,7 @@ if __name__ == "__main__":
 
     DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-    CLASSES = [
-        '__background__', 'object'
-    ]
-
+    CLASSES = labels
     roboflow = Roboflow(api_key='pg3aiPpEDu1jgJpFSiGR')
     name = "furniture-objects"
     number = 1

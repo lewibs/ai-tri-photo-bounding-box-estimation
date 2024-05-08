@@ -1,24 +1,31 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from ..Furniture_Detector.FurnitureDetector import get_furniture_detector
+from FurnitureDetector import get_furniture_detector
 
 class BBEstimator(nn.Module):
     def __init__(self):
         super(BBEstimator, self).__init__()
 
         self.image_model = get_furniture_detector()
-        
+        self.image_model.load_state_dict(torch.load("./FurnitureDetector_weights.pth"))
+        self.image_model.eval()
 
-        # self.layers = nn.Sequential(
-
-        # )
-
-        # self.fc1 = nn.Linear(input_size, hidden_size)  # Fully connected layer from input to hidden
-        # self.fc2 = nn.Linear(hidden_size, output_size) # Fully connected layer from hidden to output
+        self.layers = nn.Sequential(
+            nn.Linear(34, 64),  # Input size: 34, Output size: 64
+            nn.ReLU(),           # Apply ReLU activation function
+            nn.Linear(64, 32),   # Input size: 64, Output size: 32
+            nn.ReLU(),           # Apply ReLU activation function
+            nn.Linear(32, 6)     # Input size: 32, Output size: 6 (XYZXYZ)
+        )
 
     def forward(self, fov, near, far, aspect, photos, positions, rotations):
+        self.image_model.eval()
         photo_predictions = self.image_model(photos)
+
+        if len(photo_predictions) == 0:
+            return None
+
         
         box_predictions = []
         for d in photo_predictions:
@@ -26,14 +33,16 @@ class BBEstimator(nn.Module):
             max_score_box = d['boxes'][max_score_idx]
             box_predictions.append(max_score_box)
 
-        print(box_predictions)
+        box_predictions = torch.stack(box_predictions)
+        positions = torch.tensor(positions)
+        rotations = torch.tensor(rotations)
 
-        return None
+        box_predictions = box_predictions.flatten() #12
+        positions = positions.flatten() #9
+        rotations = positions.flatten() #9
 
-# Example usage:
-input_size = 10
-hidden_size = 20
-output_size = 1  # Assuming it's a regression problem with one output value
+        input = torch.cat((torch.tensor([fov]),torch.tensor([near]),torch.tensor([far]), torch.tensor([aspect]), positions, rotations, box_predictions))
 
-model = BBEstimator(input_size, hidden_size, output_size)
-print(model)
+        x = self.layers(input)
+
+        return x
