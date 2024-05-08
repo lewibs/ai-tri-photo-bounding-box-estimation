@@ -11,7 +11,7 @@ import torch.nn.functional as F
 
 def main():
     NUM_EPOCHS = 4
-    BATCH_SIZE = 2
+    BATCH_SIZE = 1
     NUM_EPOCHS = 4
     NUM_WORKERS = 4
     LEARNING_RATE = 0.005
@@ -93,22 +93,28 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
                 optimizer, start_factor=warmup_factor, total_iters=warmup_iters
             )
 
+        length = len(data_loader)
         for batch_idx, batch_data in enumerate(data_loader):
             fov, near, far, aspect, photos, positions, rotations, target = batch_data
             for i in range(len(fov)):
-                prediction = model(fov[i], near[i], far[i], aspect[i], photos[i], positions[i], rotations[i])
+                # try:
+                    prediction = model(fov[i], near[i], far[i], aspect[i], photos[i], positions[i], rotations[i])
 
-                if prediction is None:
-                    continue
+                    if prediction is None:
+                        print(f"iteration: {batch_idx}/{length}. Loss: {None}")
+                        continue
 
-                t = torch.tensor(target[i])
-                loss = F.smooth_l1_loss(prediction, t)
-                loss.backward()
-                optimizer.step()
-                if lr_scheduler is not None:
-                    lr_scheduler.step()
+                    t = torch.tensor(target[i])
+                    loss = F.smooth_l1_loss(prediction, t)
+                    loss.backward()
+                    optimizer.step()
+                    if lr_scheduler is not None:
+                        lr_scheduler.step()
 
-                print(f"iteration: {batch_idx}. Loss: {loss.item()}")
+                    print(f"iteration: {batch_idx}/{length}. Loss: {loss.item()}")
+                # except Exception as error:
+                    # print(error)
+                    # print(f"iteration: {batch_idx}/{length}. Loss: ERROR")
             
 
 def evaluate(model, data_loader_test, device):

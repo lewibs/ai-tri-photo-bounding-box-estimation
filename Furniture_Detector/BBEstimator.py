@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision.transforms as T
 from FurnitureDetector import get_furniture_detector
 
 class BBEstimator(nn.Module):
@@ -22,14 +23,20 @@ class BBEstimator(nn.Module):
     def forward(self, fov, near, far, aspect, photos, positions, rotations):
         self.image_model.eval()
         photo_predictions = self.image_model(photos)
-
-        if len(photo_predictions) == 0:
-            return None
-
         
         box_predictions = []
         for d in photo_predictions:
-            max_score_idx = d['scores'].argmax().item()  # Find index of maximum score
+            try:
+                max_score_idx = d['scores'].argmax().item()  # Find index of maximum score
+            except:
+                for photo in photos:
+                    T.ToPILImage()(photo).show()
+
+                print(fov, near, far, aspect, positions, rotations, len(photos))
+                print(photo_predictions)
+
+                return None
+
             max_score_box = d['boxes'][max_score_idx]
             box_predictions.append(max_score_box)
 
